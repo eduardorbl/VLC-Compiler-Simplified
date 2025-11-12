@@ -1,0 +1,168 @@
+#!/bin/bash
+#
+# VLC 4.x Build Script para Windows
+# =================================
+# 
+# Script otimizado para compilação do VLC 4.x com interface Qt6 no Windows 10/11
+# Aplica automaticamente todas as correções necessárias para compatibilidade.
+#
+# Autor: Sistema de Build VLC Automatizado
+# Versão: 2.0
+# Data: Novembro 2025
+
+set -e
+
+# === CONFIGURAÇÕES ===
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+VLC_SOURCE_DIR="/c/Users/$USERNAME/vlc-source"
+INSTALL_PREFIX="/c/Users/$USERNAME/vlc-test"
+BUILD_DIR="build-mingw"
+
+# === FUNÇÕES UTILITÁRIAS ===
+print_header() {
+    echo ""
+    echo "=================================================================="
+    echo "  $1"
+    echo "=================================================================="
+}
+
+print_step() {
+    echo ""
+    echo "[$1/$2] $3..."
+}
+
+print_success() {
+    echo ""
+    echo "✅ $1"
+}
+
+print_warning() {
+    echo ""
+    echo "⚠️  $1"
+}
+
+print_error() {
+    echo ""
+    echo "❌ ERRO: $1"
+}
+
+# === APLICAR CORREÇÕES AUTOMÁTICAS ===
+apply_patches() {
+    echo "🔧 Aplicando correções automáticas..."
+    
+    # 1. D3D12MemAlloc.h header
+    local d3d_target="/c/msys64/mingw64/include/D3D12MemAlloc.h"
+    local d3d_source="$PROJECT_ROOT/resources/third_party/D3D12MemAlloc.h"
+    
+    if [ -f "$d3d_source" ]; then
+        if [ ! -f "$d3d_target" ] || grep -q "Stub header" "$d3d_target" 2>/dev/null; then
+            echo "  📋 Instalando D3D12MemAlloc.h..."
+            install -D "$d3d_source" "$d3d_target"
+        else
+            echo "  ✓ D3D12MemAlloc.h já atualizado"
+        fi
+    else
+        print_warning "D3D12MemAlloc.h não encontrado, a compilação pode falhar"
+    fi
+    
+    # 2. Correções Qt 6.10+
+    if [ -f "$PROJECT_ROOT/scripts/fix_qt_compatibility.py" ]; then
+        echo "  🛠️ Aplicando patches Qt 6.10+..."
+        python3 "$PROJECT_ROOT/scripts/fix_qt_compatibility.py"
+    fi
+    
+    print_success "Todas as correções aplicadas"
+}
+
+# === FUNÇÃO PRINCIPAL ===
+main() {
+    print_header "VLC 4.x Build System - Versão Profissional"
+    echo "Sistema de compilação automática para Windows 10/11"
+    echo "Compatível com Qt 6.10+ e MSYS2 MinGW 64-bit"
+    
+    # Verificar ambiente
+    if ! command -v meson &> /dev/null; then
+        print_error "Meson não encontrado! Execute primeiro: pacman -S mingw-w64-x86_64-meson"
+        exit 1
+    fi
+    
+    # Aplicar patches
+    apply_patches
+    
+    print_step "1" "5" "Verificando repositório VLC"
+    if [ ! -d "$VLC_SOURCE_DIR" ]; then
+        echo "  📦 Clonando VLC 4.x (~1GB, pode demorar)..."
+        cd "/c/Users/$USERNAME"
+        git clone https://code.videolan.org/videolan/vlc.git vlc-source
+        cd vlc-source
+        git switch master
+    else
+        echo "  ✓ Repositório encontrado em $VLC_SOURCE_DIR"
+        cd "$VLC_SOURCE_DIR"
+        echo "  🔄 Atualizando código..."
+        git pull || print_warning "Não foi possível atualizar (pode já estar atualizado)"
+    fi
+    
+    print_step "2" "5" "Preparando diretório de instalação"
+    mkdir -p "$INSTALL_PREFIX"
+    echo "  📁 Diretório: $INSTALL_PREFIX"
+    
+    print_step "3" "5" "Configurando build com Meson"
+    if [ -d "$BUILD_DIR" ]; then
+        echo "  🗑️ Removendo build anterior..."
+        rm -rf "$BUILD_DIR"
+    fi
+    
+    echo "  ⚙️ Configuração otimizada para Windows..."
+    meson setup "$BUILD_DIR" \
+      --prefix="$INSTALL_PREFIX" \
+      --buildtype=release \
+      -Dqt=enabled \
+      -Dlibplacebo=disabled \
+      -Dskins2=disabled \
+      -Davcodec=disabled \
+      -Ddbus=disabled \
+      -Dncurses=disabled \
+      --wrap-mode=nodownload
+    
+    print_success "Configuração concluída!"
+    
+    print_step "4" "5" "Compilando VLC (30-60 minutos)"
+    echo "  🚀 Iniciando compilação..."
+    echo "  ⏰ Início: $(date)"
+    
+    if meson compile -C "$BUILD_DIR"; then
+        echo "  ⏰ Fim: $(date)"
+        print_success "Compilação concluída!"
+    else
+        print_error "Falha na compilação! Verifique as mensagens acima."
+        exit 1
+    fi
+    
+    print_step "5" "5" "Instalando arquivos"
+    if meson install -C "$BUILD_DIR"; then
+        print_success "Instalação concluída!"
+    else
+        print_error "Falha na instalação!"
+        exit 1
+    fi
+    
+    # Resumo final
+    print_header "COMPILAÇÃO CONCLUÍDA COM SUCESSO! 🎉"
+    echo ""
+    echo "📍 VLC instalado em:"
+    echo "   $INSTALL_PREFIX/bin/vlc.exe"
+    echo ""
+    echo "🧪 Para testar a instalação:"
+    echo "   scripts\\test_vlc_build.ps1"
+    echo ""
+    echo "🚀 Para executar o VLC:"
+    echo "   & \"C:\\vlc-test\\bin\\vlc.exe\""
+    echo ""
+}
+
+# Executar se chamado diretamente
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

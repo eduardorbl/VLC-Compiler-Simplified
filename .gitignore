@@ -1,0 +1,95 @@
+# VLC Build System - Git Ignore
+
+# === Arquivos de Build ===
+build*/
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.exe
+*.so
+*.dylib
+meson-logs/
+compile_commands.json
+
+# === Código Fonte VLC ===
+vlc-source/
+
+# === Instalação VLC ===
+vlc-test/
+
+# === Ambiente MSYS2 ===
+msys64/
+mingw32/
+mingw64/
+
+# === Logs e Temporários ===
+*.log
+*.tmp
+*.temp
+meson-logs/
+.meson_exe_*
+
+# === Arquivos de Sistema Windows ===
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.lnk
+
+# === Configuração Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# === IDEs e Editores ===
+.vscode/
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+*.swo
+*~
+
+# === Relatórios de Teste ===
+VLC-Test-Report.html
+TestResults.xml
+coverage.xml
+
+# === Downloads Temporários ===
+*.zip.tmp
+sample-*.mp4
+
+# === Backups ===
+*.backup
+*.bak
+*.orig
+
+# === Configurações Locais ===
+.env
+.env.local
+config.local.*
+
+# === Cache ===
+*.cache
+.cache/
+.tmp/

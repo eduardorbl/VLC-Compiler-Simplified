@@ -1,0 +1,18 @@
+--- a/modules/gui/qt/maininterface/compositor_dcomp.cpp
++++ b/modules/gui/qt/maininterface/compositor_dcomp.cpp
+@@ -168,7 +168,14 @@ void CompositorDirectComposition::setup()
+     assert(rhi);
+     assert(rhi->backend() == QRhi::D3D11);
+ 
+-    QRhiImplementation* const rhiImplementation = rhi->implementation();
++    // Qt 6.10+ changed implementation() to use QRhiNativeHandles instead
++#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
++    const QRhiNativeHandles *nativeHandles = rhi->nativeHandles();
++    const QRhiD3D11NativeHandles *d3d11Handles = static_cast<const QRhiD3D11NativeHandles*>(nativeHandles);
++    ID3D11Device* d3dDevice = d3d11Handles->dev;
++#else
++    QRhiImplementation* const rhiImplementation = rhi->implementation();
++#endif
+ 
+     Microsoft::WRL::ComPtr<ID3D11Device> d3dDevice;
+     rhiImplementation->getD3DDevice(&d3dDevice);
