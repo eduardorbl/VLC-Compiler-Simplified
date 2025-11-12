@@ -18,7 +18,7 @@ todo o processo e garantem que dependências como o `D3D12MemAlloc.h` estejam co
 ### PowerShell (Windows 10/11)
 
 ```powershell
-.\compile_vlc.ps1
+.\Build-VLC.ps1
 ```
 
 O script:
@@ -28,19 +28,19 @@ O script:
   (`-Dqt=enabled`, `-Ddbus=disabled`, `-Dncurses=disabled`, etc.);
 - Copia o header oficial do **D3D12 Memory Allocator** para `C:\msys64\mingw64\include`
   quando encontra o stub minimalista (causa comum do erro em `qrhid3d12_p.h`);
-- Aplica automaticamente o patch `patches/fix_qt_rhi_compatibility.patch`, necessário
-  quando o MSYS2 entrega o Qt 6.10+ (sem `QRhi::implementation()`).
+- Aplica automaticamente o patch Qt 6.10+ através do `fix_qt_compatibility.py`, necessário
+  quando o MSYS2 entrega o Qt 6.10+ (sem `QRhi::implementation()`);
 - Chama `meson compile` e `meson install`.
 
 ### Shell dentro do MSYS2 MinGW 64-bit
 
 ```bash
-chmod +x ./compile_vlc.sh
-./compile_vlc.sh
+chmod +x ./scripts/build_vlc.sh
+./scripts/build_vlc.sh
 ```
 
-> Ambos os scripts geram a instalação em `C:\Users\<usuario>\vlc-test`. Após o término,
-> execute `.\test_vlc_build.ps1` para validar a build.
+> Ambos os scripts geram a instalação em `C:\vlc-test`. Após o término,
+> execute `.\scripts\Test-VLC.ps1` para validar a build.
 
 Se preferir seguir manualmente, lembre-se de **executar todos os comandos de build
 de dentro do repositório oficial do VLC** (ex.: `C:\Users\<usuario>\vlc-source`).
@@ -52,9 +52,9 @@ Executar `meson configure build-mingw` na pasta do Build Doctor resultará no er
 ## 1. Validar o ambiente
 
 1. Abra o **PowerShell**.
-2. Vá até a pasta do VLC Build Doctor e execute:
+2. Vá até a pasta do VLC Build System e execute:
    ```powershell
-   python vlc_build_doctor.py
+   python tools\vlc_build_doctor.py
    ```
 3. Garanta que todos os itens essenciais estejam com status `OK`.  
    - Se `Visual Studio Build Tools` aparecer como `AVISO` ou `FALHA`, instale o
@@ -177,16 +177,16 @@ Execute o script de teste que valida todos os componentes críticos:
 
 ```powershell
 # Teste completo com reprodução de vídeo
-.\test_vlc_build.ps1
+.\scripts\Test-VLC.ps1
 
 # Teste sem reprodução de vídeo (mais rápido)
-.\test_vlc_build.ps1 -SkipVideoTest
+.\scripts\Test-VLC.ps1 -SkipVideoTest
 
 # Teste com informações detalhadas
-.\test_vlc_build.ps1 -Verbose
+.\scripts\Test-VLC.ps1 -Verbose
 
 # Testar instalação em caminho personalizado
-.\test_vlc_build.ps1 -VlcPath "D:\custom-vlc\bin\vlc.exe"
+.\scripts\Test-VLC.ps1 -VlcPath "D:\custom-vlc\bin\vlc.exe"
 ```
 
 O script valida automaticamente:
@@ -218,7 +218,7 @@ Se preferir validar manualmente:
 3. **Relatório do Build Doctor**: rode novamente o script para registrar o
    estado final:
    ```powershell
-   python vlc_build_doctor.py --markdown reports\auditoria-pos-build.md
+   python tools\vlc_build_doctor.py --markdown reports\auditoria-pos-build.md
    ```
 
 4. **Reprodução de vídeo**: confirme que a interface realmente exibe mídia.
@@ -241,9 +241,9 @@ Se preferir validar manualmente:
 | `ninja: build stopped` | Erro durante compilação | Inspecione o log exibido imediatamente antes da falha e aplique a correção (às vezes falta de memória/tempo) |
 | VLC inicia sem interface | Configure o parâmetro `-Dqt=enabled` e confirme se a instalação foi feita com `meson install` |
 | Falta de Visual Studio Build Tools | Necessário para alguns componentes auxiliares | Abra o instalador do VS Build Tools e marque o workload C++ |
-| `Directory .../build-mingw is neither a Meson build directory nor a project source directory` | Comando executado fora do repositório `vlc-source` ou `build-mingw` ainda não foi criado | Execute `cd C:\Users\SeuUsuario\vlc-source` e rode novamente `meson setup build-mingw ...` (ou simplesmente `.\compile_vlc.ps1` para recriar do zero). |
-| Erros em `qrhid3d12_p.h` mencionando `D3D12MA::Allocation/Budget` | Versão stub de `D3D12MemAlloc.h` instalada no MSYS2 | Rode `.\compile_vlc.ps1` que copia o header oficial automaticamente ou substitua manualmente por `third_party/D3D12MemAlloc.h`. |
-| `error: 'class QRhi' has no member named 'implementation'` ou falha em `compositor_dcomp.cpp` | Qt 6.10+ removeu `QRhi::implementation()` | Rode `.\compile_vlc.ps1` (aplica o patch automaticamente) ou execute `./fix_qt610_compositor.sh` dentro do MSYS2 para aplicar `patches/fix_qt_rhi_compatibility.patch` antes de compilar. |
+| `Directory .../build-mingw is neither a Meson build directory nor a project source directory` | Comando executado fora do repositório `vlc-source` ou `build-mingw` ainda não foi criado | Execute `cd C:\Users\SeuUsuario\vlc-source` e rode novamente `meson setup build-mingw ...` (ou simplesmente `.\Build-VLC.ps1` para recriar do zero). |
+| Erros em `qrhid3d12_p.h` mencionando `D3D12MA::Allocation/Budget` | Versão stub de `D3D12MemAlloc.h` instalada no MSYS2 | Rode `.\Build-VLC.ps1` que copia o header oficial automaticamente ou substitua manualmente por `resources/third_party/D3D12MemAlloc.h`. |
+| `error: 'class QRhi' has no member named 'implementation'` ou falha em `compositor_dcomp.cpp` | Qt 6.10+ removeu `QRhi::implementation()` | Rode `.\Build-VLC.ps1` (aplica o patch automaticamente) ou execute `python scripts\fix_qt_compatibility.py` para aplicar o patch antes de compilar. |
 
 ---
 
