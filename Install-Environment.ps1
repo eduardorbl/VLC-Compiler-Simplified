@@ -101,7 +101,7 @@ function Test-Prerequisites {
     Write-Host "  ✓ Privilégios de administrador confirmados" -ForegroundColor Gray
     
     # Verificar sistema operacional
-    $OS = Get-WmiObject -Class Win32_OperatingSystem
+    $OS = Get-CimInstance -ClassName Win32_OperatingSystem
     if ([System.Version]$OS.Version -lt [System.Version]"10.0") {
         throw "Windows 10 ou superior é necessário"
     }
@@ -113,7 +113,7 @@ function Test-Prerequisites {
         $Drive = $InstallPath.Substring(0,1)
     }
     
-    $FreeSpace = (Get-WmiObject -Class Win32_LogicalDisk -Filter "DeviceID='$Drive`:'").FreeSpace
+    $FreeSpace = (Get-CimInstance -ClassName Win32_LogicalDisk -Filter "DeviceID='$Drive`:'").FreeSpace
     if ($FreeSpace -lt $Config.MinDiskSpace) {
         $FreeSpaceGB = [math]::Round($FreeSpace / 1GB, 1)
         $RequiredGB = [math]::Round($Config.MinDiskSpace / 1GB, 1)
