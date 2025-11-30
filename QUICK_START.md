@@ -1,124 +1,195 @@
-# QUICK START GUIDE - VLC Build System
+# Quick Start Guide - VLC Build System
 
-## 🚀 Para Desenvolvedores da Equipe
+**Get VLC 4.x compiled in 3 steps!**
 
-### 1️⃣ Clone do Repositório
+---
+
+## 🚀 For Developers
+
+### 1️⃣ Clone the Repository
 
 ```powershell
-# 1. Clone o projeto
-git clone https://github.com/SEU_USUARIO/vlc-build-system.git
-cd vlc-build-system
+# Clone the project
+git clone https://github.com/eduardorbl/VLC-Compiler-Simplified.git
+cd VLC-Compiler-Simplified
 
-# 2. Verifique que está na pasta correta
-ls # Deve mostrar: Build-VLC.ps1, Install-Environment.ps1, etc.
+# Verify you're in the right folder
+ls  # Should show: Compile-VLC.ps1, Install-Environment.ps1, etc.
 ```
 
-### 2️⃣ Instalação Automática (Como Administrador)
+### 2️⃣ Build with ONE COMMAND! 🎯
 
 ```powershell
-# Abrir PowerShell como Administrador
-# Navegar até a pasta do projeto
-cd "C:\caminho\para\vlc-build-system"
+.\Compile-VLC.ps1
+```
 
-# Executar instalação completa
+**That's all!** The script will:
+- ✅ Check MSYS2 installation (offers auto-install if missing)
+- ✅ Install all dependencies automatically
+- ✅ Clone VLC source code
+- ✅ Apply Qt 6.8+ compatibility patches
+- ✅ Configure with Meson
+- ✅ Compile VLC 4.x
+- ✅ Validate the build
+
+**Time:** 
+- ⏰ First run: ~60-120 minutes (download + install + compile)
+- ⏰ Subsequent builds: ~15-30 minutes (compile only)
+
+### 3️⃣ (Optional) Manual Step-by-Step
+
+If you prefer full control:
+
+```powershell
+# Step 1: Install environment (run as Administrator)
 .\Install-Environment.ps1
 
-# ⏰ Aguardar ~15-30 minutos para download e instalação
-```
-
-### 3️⃣ Compilação do VLC
-
-```powershell
-# Em PowerShell normal (não precisa ser Admin)
+# Step 2: Build VLC
 .\Build-VLC.ps1
 
-# ⏰ Primeira compilação: ~45-90 minutos
-# ⏰ Compilações seguintes: ~15-30 minutos
-```
-
-### 4️⃣ Teste da Compilação
-
-```powershell
-# Executar suite de testes
-.\scripts\Test-VLC.ps1
-
-# Ver relatório em: VLC-Test-Report.html
+# Step 3: Validate
+python tools\vlc_build_doctor.py
 ```
 
 ---
 
-## ✅ Verificação Rápida
+## ✅ Quick Verification
 
-Se tudo funcionou, você deve ter:
+If everything worked, you should have VLC compiled:
 
 ```powershell
-# VLC compilado funcionando
+# Check version
 & "C:\vlc-test\bin\vlc.exe" --version
 
-# Saída esperada:
-# VLC media player 4.0.0-dev (revision...)
-# VideoLAN
+# Expected output:
+# VLC media player 4.0.0-dev Otto Chriek
+# Copyright © 1996-2025 the VideoLAN team
 ```
 
 ---
 
-## 🚨 Se Algo Deu Errado
+## 🚨 Troubleshooting
 
-### Problemas Comuns:
+### Common Issues:
 
-1. **"MSYS2 não encontrado"**
-   ```powershell
-   .\Install-Environment.ps1  # Executar como Admin
-   ```
+**1. "MSYS2 not found"**
+```powershell
+# Run as Administrator
+.\Install-Environment.ps1
+```
 
-2. **"Espaço insuficiente"**
-   - Libere pelo menos 8GB no drive C:
-   - Limpe arquivos temporários
+**2. "Insufficient disk space"**
+- Free at least 8GB on C: drive
+- Run: `cleanmgr` to clean temporary files
 
-3. **"Qt implementation() erro"**
-   - Sistema aplica patch automaticamente
-   - Verifique: `python scripts\fix_qt_compatibility.py`
+**3. "Compilation fails"**
+```powershell
+# Run diagnostics
+python tools\vlc_build_doctor.py
 
-4. **Compilação falha**
-   ```powershell
-   python tools\vlc_build_doctor.py  # Diagnóstico completo
-   ```
+# Check recent errors
+Get-Content "C:\Users\$env:USERNAME\vlc-source\build-mingw\meson-logs\meson-log.txt" -Tail 30
+```
 
-### Documentação Completa:
+**4. "Qt errors during build"**
+- System applies patches automatically
+- For Qt 6.8+, DirectComposition is disabled (uses Win7 compositor instead)
 
-- 📖 **README.md** - Visão geral completa
-- 🔧 **docs/TROUBLESHOOTING.md** - Soluções detalhadas
-- 🎯 **CONTRIBUTING.md** - Guia de desenvolvimento
+### Full Documentation:
+
+- 📖 **README.md** - Complete overview
+- 🔧 **docs/TROUBLESHOOTING.md** - Detailed solutions
+- 🎯 **CONTRIBUTING.md** - Development guide
 
 ---
 
-## 💻 Compatibilidade
+## 💻 Compatibility
 
-### ✅ Testado em:
-- Windows 10 (versão 1909+)
+### ✅ Tested On:
+- Windows 10 (version 1909+)
 - Windows 11
 - PowerShell 5.1+
-- MSYS2 (instalado automaticamente)
+- MSYS2 UCRT64
 
-### 📋 Requisitos:
-- **Espaço em disco**: 8GB livres no drive C:
-- **RAM**: 8GB (recomendado 16GB)
-- **Tempo**: 1-2 horas para setup inicial completo
-
----
-
-## 📞 Suporte
-
-1. **Consultar**: docs/TROUBLESHOOTING.md
-2. **Diagnosticar**: `python tools\vlc_build_doctor.py`
-3. **Reportar**: Criar issue no GitHub com log completo
+### 📋 Requirements:
+- **Disk Space**: 8GB free on C:
+- **RAM**: 8GB minimum (16GB recommended)
+- **Internet**: Broadband connection
+- **Time**: 1-2 hours for complete setup
 
 ---
 
-**🎯 Meta: Máximo 3 comandos para ter VLC funcionando em qualquer máquina Windows!**
+## 📊 Build Output
 
-```powershell
-.\Install-Environment.ps1  # (como Admin)
-.\Build-VLC.ps1
-.\scripts\Test-VLC.ps1
+After successful build, you'll have:
+
+| Component | Location | Status |
+|-----------|----------|--------|
+| VLC Executable | `C:\vlc-test\bin\vlc.exe` | ✅ Ready |
+| Libraries | `C:\vlc-test\lib\` | ✅ 2 core DLLs |
+| Plugins | Build directory | ✅ 328 plugins |
+| Source | `C:\Users\%USERNAME%\vlc-source\` | ✅ Complete |
+
+---
+
+## 🎯 What Gets Compiled
+
+### Video Codecs:
+✅ x264, x265, VP8/VP9 (vpx), AV1 (aom, dav1d, rav1e)
+
+### Audio Codecs:
+✅ opus, vorbis, theora, speex
+
+### Containers:
+✅ MP4, OGG, Matroska support
+
+### Video Output:
+✅ Direct3D 11, Direct3D 9, OpenGL
+
+### Interface:
+✅ Qt 6.8.0 (Win7 compositor mode for compatibility)
+
+---
+
+## 📞 Need Help?
+
+1. **Documentation**: Check [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+2. **Diagnostics**: Run `python tools\vlc_build_doctor.py`
+3. **Logs**: View `C:\Users\%USERNAME%\vlc-source\build-mingw\meson-logs\`
+4. **Report Bug**: Create GitHub issue with full log output
+
+---
+
+## 🎓 Learning Resources
+
+Want to understand what's happening?
+
+- **Build Process**: See [docs/COMPILAR_VLC_GUI.md](docs/COMPILAR_VLC_GUI.md)
+- **Technical Details**: See [docs/GUIA_TECNICO.md](docs/GUIA_TECNICO.md)
+- **Scripts**: Explore `scripts/` and `tools/` directories
+
+---
+
+## 🎉 Success!
+
+Once built, VLC is installed at:
 ```
+C:\vlc-test\
+├── bin\
+│   ├── vlc.exe          # Main executable
+│   ├── libvlc.dll       # Core library
+│   └── libvlccore-9.dll # Core library
+└── lib\
+    └── vlc\plugins\     # All plugins
+```
+
+**Run VLC:**
+```powershell
+& "C:\vlc-test\bin\vlc.exe"
+```
+
+**Or double-click:** `C:\vlc-test\bin\vlc.exe` in Explorer
+
+---
+
+**🎯 One Command Philosophy: `.\Compile-VLC.ps1` does everything!**

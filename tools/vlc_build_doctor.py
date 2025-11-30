@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 VLC Build Doctor - Auditoria de ambiente minimalista
 
@@ -286,13 +287,61 @@ def check_nasm() -> CheckOutcome:
 
 
 def check_perl() -> CheckOutcome:
-    # Strawberry Perl escreve versão em stderr (v5.32.1, por exemplo)
-    return check_command(
+    # Tentar encontrar Perl no PATH primeiro
+    result = check_command(
         "Perl",
         ("perl",),
         ("-v",),
         min_version="5.10",
-        hint="Instale Strawberry Perl: https://strawberryperl.com/.",
+        hint="Instale Perl via MSYS2 (pacman -S perl) ou Strawberry Perl.",
+    )
+    
+    # Se não encontrou no PATH, procurar no MSYS2
+    if result.status == "fail":
+        msys2_roots = discover_msys2_roots()
+        for root in msys2_roots:
+            perl_path = root / "usr" / "bin" / "perl.exe"
+            if perl_path.exists():
+                try:
+                    completed = run_subprocess([str(perl_path), "-v"])
+                    combined = "\n".join(
+                        part.strip() 
+                        for part in [completed.stdout, completed.stderr] 
+                        if part
+                    )
+                    version = extract_version(combined)
+                    return CheckOutcome(
+                        name="Perl",
+                        status="ok" if completed.returncode == 0 else "warn",
+                        version=version,
+                        location=str(perl_path),
+                        message=f"Perl encontrado no MSYS2. Versão: {version or 'desconhecida'}",
+                    )
+                except OSError:
+                    pass
+    
+    return result
+
+
+def check_lua() -> CheckOutcome:
+    """Verifica a disponibilidade do Lua (necessário para scripts do VLC)."""
+    return check_command(
+        "Lua",
+        ("lua",),
+        ("-v",),
+        min_version="5.1",
+        hint="Instale Lua via MSYS2: pacman -S mingw-w64-ucrt-x86_64-lua",
+    )
+
+
+def check_qsb() -> CheckOutcome:
+    """Verifica o Qt Shader Baker (qsb), necessário para Qt 6.x."""
+    return check_command(
+        "qsb (Qt Shader Baker)",
+        ("qsb",),
+        ("--version",),
+        min_version="6.0",
+        hint="Instale qt6-shadertools via MSYS2: pacman -S mingw-w64-ucrt-x86_64-qt6-shadertools",
     )
 
 
@@ -534,6 +583,8 @@ DEPENDENCIES: List[Dependency] = [
     Dependency("pkgconfig", "pkg-config", check_pkg_config, optional=True),
     Dependency("nasm", "NASM", check_nasm),
     Dependency("perl", "Perl", check_perl),
+    Dependency("lua", "Lua", check_lua),
+    Dependency("qsb", "qsb (Qt Shader Baker)", check_qsb),
     Dependency("msys2", "MSYS2", check_msys2),
     Dependency("mingw", "GCC (MinGW-w64)", check_mingw),
     Dependency("visualstudio", "Visual Studio Build Tools", check_visual_studio),

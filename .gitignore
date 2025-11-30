@@ -1,7 +1,8 @@
 # VLC Build System - Git Ignore
 
-# === Arquivos de Build ===
+# === Build Artifacts ===
 build*/
+build-mingw/
 *.o
 *.obj
 *.a
@@ -13,11 +14,12 @@ build*/
 meson-logs/
 compile_commands.json
 
-# === Código Fonte VLC ===
+# === VLC Source and Installation ===
 vlc-source/
-
-# === Instalação VLC ===
 vlc-test/
+
+# === Legacy Files (archived) ===
+legacy/
 
 # === Ambiente MSYS2 ===
 msys64/
@@ -70,14 +72,15 @@ wheels/
 *.swo
 *~
 
-# === Relatórios de Teste ===
+# === Test Reports and Videos ===
 VLC-Test-Report.html
 TestResults.xml
 coverage.xml
-
-# === Downloads Temporários ===
+test-videos/*.mp4
+test-videos/*.avi
 *.zip.tmp
 sample-*.mp4
+bigbuckbunny-*.mp4
 
 # === Backups ===
 *.backup

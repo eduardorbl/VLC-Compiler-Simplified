@@ -1,0 +1,12 @@
+--- a/modules/gui/qt/maininterface/compositor_dcomp.cpp
++++ b/modules/gui/qt/maininterface/compositor_dcomp.cpp
+@@ -107,7 +107,9 @@ bool CompositorDirectComposition::init()
+ {
+ #if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+     // DirectComposition not supported with Qt 6.10+ due to QRhi API changes
+     msg_Warn(m_intf, "DirectComposition disabled for Qt 6.10+, using Win7 compositor fallback");
+     return false;
++#elif QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
++    msg_Warn(m_intf, "DirectComposition disabled for Qt 6.8-6.9, using Win7 compositor fallback");
++    return false;
+ #else

@@ -52,7 +52,7 @@ apply_patches() {
     echo "🔧 Aplicando correções automáticas..."
     
     # 1. D3D12MemAlloc.h header
-    local d3d_target="/c/msys64/mingw64/include/D3D12MemAlloc.h"
+    local d3d_target="/c/msys64/ucrt64/include/D3D12MemAlloc.h"
     local d3d_source="$PROJECT_ROOT/resources/third_party/D3D12MemAlloc.h"
     
     if [ -f "$d3d_source" ]; then
@@ -70,6 +70,26 @@ apply_patches() {
     if [ -f "$PROJECT_ROOT/scripts/fix_qt_compatibility.py" ]; then
         echo "  🛠️ Aplicando patches Qt 6.10+..."
         python3 "$PROJECT_ROOT/scripts/fix_qt_compatibility.py"
+    fi
+    
+    # 3. Aplicar patch de compatibilidade Qt RHI
+    local patch_file="$PROJECT_ROOT/patches/fix_qt_rhi_compatibility.patch"
+    if [ -f "$patch_file" ]; then
+        echo "  🔧 Aplicando patch fix_qt_rhi_compatibility.patch..."
+        cd "$VLC_SOURCE" || exit 1
+        if patch -p1 --dry-run -N -s < "$patch_file" > /dev/null 2>&1; then
+            patch -p1 -N < "$patch_file"
+            echo "  ✓ Patch aplicado com sucesso"
+        else
+            echo "  ℹ️ Patch já aplicado ou não necessário"
+        fi
+        cd "$PROJECT_ROOT" || exit 1
+    fi
+    
+    # 4. Instalar perl se necessário
+    if ! command -v perl &> /dev/null; then
+        echo "  📦 Instalando Perl..."
+        pacman -S --noconfirm --needed perl
     fi
     
     print_success "Todas as correções aplicadas"

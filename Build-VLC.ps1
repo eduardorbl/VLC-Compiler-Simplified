@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
 Sistema principal de compilacao VLC para Windows 10/11
@@ -99,6 +99,12 @@ function Find-MSYS2 {
         }
     }
     
+    # Se não encontrou, procurar no PATH
+    $bashInPath = Get-Command bash.exe -ErrorAction SilentlyContinue
+    if ($bashInPath) {
+        return $bashInPath.Source
+    }
+    
     return $null
 }
 
@@ -161,17 +167,38 @@ function Test-Prerequisites {
     # 4. Verificar ferramentas no MSYS2
     Write-Step 4 4 "Verificando ferramentas MSYS2"
     
+    # Configurar ambiente UCRT64
+    $env:MSYSTEM = "UCRT64"
+    
     try {
-        $TestCommand = "pacman -Q mingw-w64-x86_64-gcc mingw-w64-x86_64-meson mingw-w64-x86_64-qt6-base"
+        $TestCommand = "pacman -Q mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-meson mingw-w64-ucrt-x86_64-qt6-base"
         $ToolCheck = & $MSYS2Path -lc $TestCommand 2>$null
         
         if ($LASTEXITCODE -ne 0) {
             Write-Warning-Custom "Algumas ferramentas podem estar faltando no MSYS2"
-            Write-Host "  Execute no MSYS2 MinGW 64-bit:" -ForegroundColor Yellow
-            Write-Host "  pacman -S mingw-w64-x86_64-toolchain mingw-w64-x86_64-meson mingw-w64-x86_64-qt6-base" -ForegroundColor Cyan
+            Write-Host "  Instalando ferramentas necessarias automaticamente..." -ForegroundColor Yellow
             
-            if (-not $Force) {
-                throw "Ferramentas necessarias nao encontradas. Use -Force para continuar."
+            # Instalar pacotes faltantes automaticamente
+            $RequiredPackages = @(
+                "mingw-w64-ucrt-x86_64-toolchain",
+                "mingw-w64-ucrt-x86_64-meson",
+                "mingw-w64-ucrt-x86_64-ninja",
+                "mingw-w64-ucrt-x86_64-qt6-base",
+                "mingw-w64-ucrt-x86_64-ffmpeg",
+                "mingw-w64-ucrt-x86_64-nasm",
+                "perl",
+                "git"
+            )
+            
+            $PackageList = $RequiredPackages -join " "
+            & $MSYS2Path -lc "pacman -S --noconfirm --needed $PackageList"
+            
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "  OK Ferramentas instaladas com sucesso" -ForegroundColor Gray
+            } else {
+                if (-not $Force) {
+                    throw "Falha ao instalar ferramentas. Use -Force para continuar."
+                }
             }
         } else {
             Write-Host "  OK Ferramentas de build verificadas" -ForegroundColor Gray
@@ -217,11 +244,15 @@ function Start-Build {
     
     Write-Header "INICIANDO COMPILACAO VLC"
     
+    # Configurar ambiente UCRT64
+    $env:MSYSTEM = "UCRT64"
+    
     # Preparar comando de build
     $ScriptDir = $PSScriptRoot.Replace('\', '/').Replace('C:', '/c')
     $BuildCommand = "cd '$ScriptDir' && bash scripts/build_vlc.sh"
     
     Write-Host "Executando: $BuildCommand" -ForegroundColor Gray
+    Write-Host "Ambiente: UCRT64" -ForegroundColor Gray
     Write-Host "Primeira compilacao pode levar 45-90 minutos...`n" -ForegroundColor Yellow
     
     # Executar compilacao

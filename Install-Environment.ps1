@@ -1,4 +1,4 @@
-#Requires -Version 5.0
+﻿#Requires -Version 5.0
 #Requires -RunAsAdministrator
 
 <#
@@ -44,15 +44,20 @@ $Config = @{
     MSYS2Version = "2024-01-13"
     MSYS2Url = "https://github.com/msys2/msys2-installer/releases/download/2024-01-13/msys2-x86_64-20240113.exe"
     RequiredPackages = @(
-        "mingw-w64-x86_64-toolchain",
-        "mingw-w64-x86_64-meson",
-        "mingw-w64-x86_64-ninja",
-        "mingw-w64-x86_64-cmake", 
-        "mingw-w64-x86_64-qt6-base",
-        "mingw-w64-x86_64-qt6-tools",
-        "mingw-w64-x86_64-qt6-svg",
-        "mingw-w64-x86_64-qt6-declarative",
-        "mingw-w64-x86_64-qt6-5compat",
+        "mingw-w64-ucrt-x86_64-toolchain",
+        "mingw-w64-ucrt-x86_64-meson",
+        "mingw-w64-ucrt-x86_64-ninja",
+        "mingw-w64-ucrt-x86_64-cmake", 
+        "mingw-w64-ucrt-x86_64-qt6-base",
+        "mingw-w64-ucrt-x86_64-qt6-tools",
+        "mingw-w64-ucrt-x86_64-qt6-svg",
+        "mingw-w64-ucrt-x86_64-qt6-declarative",
+        "mingw-w64-ucrt-x86_64-qt6-5compat",
+        "mingw-w64-ucrt-x86_64-qt6-shadertools",
+        "mingw-w64-ucrt-x86_64-ffmpeg",
+        "mingw-w64-ucrt-x86_64-nasm",
+        "mingw-w64-ucrt-x86_64-lua",
+        "perl",
         "git",
         "python3"
     )
