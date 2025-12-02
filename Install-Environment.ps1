@@ -56,6 +56,8 @@ $Config = @{
         "mingw-w64-ucrt-x86_64-qt6-shadertools",
         "mingw-w64-ucrt-x86_64-ffmpeg",
         "mingw-w64-ucrt-x86_64-nasm",
+        "mingw-w64-ucrt-x86_64-bison",
+        "mingw-w64-ucrt-x86_64-flex",
         "mingw-w64-ucrt-x86_64-lua",
         "perl",
         "git",
@@ -208,8 +210,47 @@ function Install-BuildTools {
     $bashPath = "$InstallPath\usr\bin\bash.exe"
     
     Write-Host "  📦 Instalando pacotes necessários..." -ForegroundColor Gray
-    $packageList = $Config.RequiredPackages -join " "
-    
+
+    # Pacman package selection helper: try candidates in order and return first that exists
+    function Select-Package {
+        param(
+            [string]$bash,
+            [string[]]$candidates
+        )
+
+        foreach ($p in $candidates) {
+            # Check package info using pacman -Si (returns non-zero if not found)
+            & $bash -lc "pacman -Si $p > /dev/null 2>&1"
+            if ($LASTEXITCODE -eq 0) {
+                return $p
+            }
+        }
+
+        return $null
+    }
+
+    # Start with the configured list, but adapt bison/flex to available repo names
+    $effectivePackages = @()
+    foreach ($p in $Config.RequiredPackages) {
+        if ($p -match "bison$") {
+            $candidates = @("mingw-w64-ucrt-x86_64-bison", "mingw-w64-x86_64-bison", "bison")
+            $chosen = Select-Package -bash $bashPath -candidates $candidates
+            if ($chosen) { $effectivePackages += $chosen } else { $effectivePackages += "bison" }
+            continue
+        }
+
+        if ($p -match "flex$") {
+            $candidates = @("mingw-w64-ucrt-x86_64-flex", "mingw-w64-x86_64-flex", "flex")
+            $chosen = Select-Package -bash $bashPath -candidates $candidates
+            if ($chosen) { $effectivePackages += $chosen } else { $effectivePackages += "flex" }
+            continue
+        }
+
+        $effectivePackages += $p
+    }
+
+    $packageList = $effectivePackages -join " "
+
     & $bashPath -lc "pacman -S --noconfirm --needed $packageList"
     
     if ($LASTEXITCODE -ne 0) {
@@ -231,6 +272,8 @@ function Test-Installation {
         "Qt6" = "pkg-config --modversion Qt6Core"
         "Git" = "git --version"
         "Python" = "python3 --version"
+        "Bison" = "bison --version"
+        "Flex" = "flex --version"
     }
     
     foreach ($tool in $tools.Keys) {

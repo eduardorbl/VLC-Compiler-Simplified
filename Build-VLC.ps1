@@ -171,9 +171,10 @@ function Test-Prerequisites {
     $env:MSYSTEM = "UCRT64"
     
     try {
+        # Check essential packages quickly (gcc, meson, qt) — bison/flex are verified separately
         $TestCommand = "pacman -Q mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-meson mingw-w64-ucrt-x86_64-qt6-base"
         $ToolCheck = & $MSYS2Path -lc $TestCommand 2>$null
-        
+
         if ($LASTEXITCODE -ne 0) {
             Write-Warning-Custom "Algumas ferramentas podem estar faltando no MSYS2"
             Write-Host "  Instalando ferramentas necessarias automaticamente..." -ForegroundColor Yellow
@@ -186,6 +187,8 @@ function Test-Prerequisites {
                 "mingw-w64-ucrt-x86_64-qt6-base",
                 "mingw-w64-ucrt-x86_64-ffmpeg",
                 "mingw-w64-ucrt-x86_64-nasm",
+                # bison/flex may have different package names depending on target (UCRT64 vs MINGW64)
+                # We'll try to detect and install the correct available package below
                 "perl",
                 "git"
             )
@@ -202,6 +205,45 @@ function Test-Prerequisites {
             }
         } else {
             Write-Host "  OK Ferramentas de build verificadas" -ForegroundColor Gray
+        }
+
+        # Verify bison/flex presence separately — check executables first
+        $haveBison = $false
+        & $MSYS2Path -lc "bison --version > /dev/null 2>&1"
+        if ($LASTEXITCODE -eq 0) { $haveBison = $true }
+
+        $haveFlex = $false
+        & $MSYS2Path -lc "flex --version > /dev/null 2>&1"
+        if ($LASTEXITCODE -eq 0) { $haveFlex = $true }
+
+        if (-not $haveBison -or -not $haveFlex) {
+            Write-Warning-Custom "bison/flex não encontrados — tentando instalar a variante correta..."
+
+            function SelectAndInstall {
+                param([string[]]$candidates)
+                foreach ($c in $candidates) {
+                    & $MSYS2Path -lc "pacman -Si $c > /dev/null 2>&1"
+                    if ($LASTEXITCODE -eq 0) {
+                        & $MSYS2Path -lc "pacman -S --noconfirm --needed $c"
+                        if ($LASTEXITCODE -eq 0) { return $true }
+                    }
+                }
+                return $false
+            }
+
+            if (-not $haveBison) {
+                $bCandidates = @("mingw-w64-ucrt-x86_64-bison","mingw-w64-x86_64-bison","bison")
+                if (-not (SelectAndInstall -candidates $bCandidates)) {
+                    Write-Warning-Custom "Não foi possível localizar/instalar um pacote válido de 'bison' no repositório MSYS2. Rode 'pacman -Ss bison' no seu shell MSYS2 para investigar e instale manualmente." 
+                }
+            }
+
+            if (-not $haveFlex) {
+                $fCandidates = @("mingw-w64-ucrt-x86_64-flex","mingw-w64-x86_64-flex","flex")
+                if (-not (SelectAndInstall -candidates $fCandidates)) {
+                    Write-Warning-Custom "Não foi possível localizar/instalar um pacote válido de 'flex' no repositório MSYS2. Rode 'pacman -Ss flex' no seu shell MSYS2 para investigar e instale manualmente." 
+                }
+            }
         }
     }
     catch {
