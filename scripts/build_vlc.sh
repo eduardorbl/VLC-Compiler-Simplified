@@ -68,6 +68,12 @@ print_error() {
 apply_patches() {
     echo "🔧 Aplicando correções automáticas..."
     
+    # Verificar se o diretório fonte do VLC existe
+    if [ ! -d "$VLC_SOURCE_DIR" ]; then
+        print_error "Diretório do VLC não encontrado: $VLC_SOURCE_DIR"
+        return 1
+    fi
+    
     # 1. D3D12MemAlloc.h header
     local d3d_target="/c/msys64/ucrt64/include/D3D12MemAlloc.h"
     local d3d_source="$PROJECT_ROOT/resources/third_party/D3D12MemAlloc.h"
@@ -93,7 +99,7 @@ apply_patches() {
     local patch_file="$PROJECT_ROOT/patches/fix_qt_rhi_compatibility.patch"
     if [ -f "$patch_file" ]; then
         echo "  🔧 Aplicando patch fix_qt_rhi_compatibility.patch..."
-        cd "$VLC_SOURCE" || exit 1
+        cd "$VLC_SOURCE_DIR" || exit 1
         if patch -p1 --dry-run -N -s < "$patch_file" > /dev/null 2>&1; then
             patch -p1 -N < "$patch_file"
             echo "  ✓ Patch aplicado com sucesso"
@@ -124,9 +130,6 @@ main() {
         exit 1
     fi
     
-    # Aplicar patches
-    apply_patches
-    
     print_step "1" "5" "Verificando repositório VLC"
     if [ ! -d "$VLC_SOURCE_DIR" ] || [ -z "$(ls -A "$VLC_SOURCE_DIR" 2>/dev/null)" ]; then
         echo "  📦 Clonando VLC 4.x (~1GB, pode demorar)..."
@@ -146,6 +149,9 @@ main() {
         echo "  🔄 Atualizando código..."
         git pull || print_warning "Não foi possível atualizar (pode já estar atualizado)"
     fi
+    
+    # Aplicar patches (após garantir que o repositório existe)
+    apply_patches
     
     print_step "2" "5" "Preparando diretório de instalação"
     mkdir -p "$INSTALL_PREFIX"
