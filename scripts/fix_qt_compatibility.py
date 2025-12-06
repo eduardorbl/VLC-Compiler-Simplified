@@ -12,18 +12,30 @@ import re
 
 def find_vlc_source():
     """Encontra o diretório do código fonte do VLC"""
-    username = os.environ.get('USERNAME', '1edur')
-    vlc_paths = [
-        f"C:/Users/{username}/vlc-source",
-        f"/c/Users/{username}/vlc-source"
-    ]
-    
-    for path in vlc_paths:
-        if os.path.exists(path):
+    # Procura em vários locais: pasta `vlc` no repositório, antigo `vlc-source` no perfil
+    # e caminhos WSL/Cygwin (/c/Users/...)
+    username = os.environ.get('USERNAME', None)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(script_dir, '..'))
+
+    candidates = []
+    # Prefer a pasta `vlc` junto ao repositório (atual layout deste projeto)
+    candidates.append(os.path.join(repo_root, 'vlc'))
+    # Legacy name used por alguns scripts/users
+    candidates.append(os.path.join(repo_root, 'vlc-source'))
+
+    # Home-user common locations
+    if username:
+        candidates.append(f"C:/Users/{username}/vlc-source")
+        candidates.append(f"/c/Users/{username}/vlc-source")
+
+    # Verificar candidates
+    for path in candidates:
+        if path and os.path.exists(path):
             return path
-    
+
     print("❌ ERRO: Código fonte do VLC não encontrado!")
-    print("   Execute primeiro o script de compilação para baixar o código.")
+    print("   Coloque o fonte em 'vlc/' na raiz deste repositório ou execute: .\\Build-VLC.ps1")
     return None
 
 def apply_compositor_patch():

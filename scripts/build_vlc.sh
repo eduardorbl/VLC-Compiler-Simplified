@@ -15,9 +15,26 @@ set -e
 # === CONFIGURAÇÕES ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-VLC_SOURCE_DIR="/c/Users/$USERNAME/vlc-source"
-INSTALL_PREFIX="/c/Users/$USERNAME/vlc-test"
+
+# Determinar diretório do código-fonte do VLC com várias opções de fallback
 BUILD_DIR="build-mingw"
+if [ -d "$PROJECT_ROOT/vlc" ]; then
+    VLC_SOURCE_DIR="$PROJECT_ROOT/vlc"
+elif [ -d "$PROJECT_ROOT/vlc-source" ]; then
+    VLC_SOURCE_DIR="$PROJECT_ROOT/vlc-source"
+elif [ -n "$USERNAME" ] && [ -d "/c/Users/$USERNAME/vlc-source" ]; then
+    VLC_SOURCE_DIR="/c/Users/$USERNAME/vlc-source"
+else
+    # Fallback: prefer cloning into the project root
+    VLC_SOURCE_DIR="$PROJECT_ROOT/vlc"
+fi
+
+# Diretório de instalação (prefira pasta no perfil se existir username)
+if [ -n "$USERNAME" ]; then
+    INSTALL_PREFIX="/c/Users/$USERNAME/vlc-test"
+else
+    INSTALL_PREFIX="$PROJECT_ROOT/vlc-test"
+fi
 
 # === FUNÇÕES UTILITÁRIAS ===
 print_header() {
@@ -111,12 +128,18 @@ main() {
     apply_patches
     
     print_step "1" "5" "Verificando repositório VLC"
-    if [ ! -d "$VLC_SOURCE_DIR" ]; then
+    if [ ! -d "$VLC_SOURCE_DIR" ] || [ -z "$(ls -A "$VLC_SOURCE_DIR" 2>/dev/null)" ]; then
         echo "  📦 Clonando VLC 4.x (~1GB, pode demorar)..."
-        cd "/c/Users/$USERNAME"
-        git clone https://code.videolan.org/videolan/vlc.git vlc-source
-        cd vlc-source
-        git switch master
+        # Clonar preferencialmente dentro do repositório para layout consistente
+        clone_dir="$PROJECT_ROOT"
+        if [ -n "$USERNAME" ] && [ -d "/c/Users/$USERNAME" ]; then
+            clone_dir="/c/Users/$USERNAME"
+        fi
+        cd "$clone_dir"
+        git clone https://code.videolan.org/videolan/vlc.git "$(basename "$VLC_SOURCE_DIR")"
+        cd "$(basename "$VLC_SOURCE_DIR")" || exit 1
+        git switch master || true
+        VLC_SOURCE_DIR=$(pwd)
     else
         echo "  ✓ Repositório encontrado em $VLC_SOURCE_DIR"
         cd "$VLC_SOURCE_DIR"
@@ -129,22 +152,26 @@ main() {
     echo "  📁 Diretório: $INSTALL_PREFIX"
     
     print_step "3" "5" "Configurando build com Meson"
-    if [ -d "$BUILD_DIR" ]; then
-        echo "  🗑️ Removendo build anterior..."
-        rm -rf "$BUILD_DIR"
-    fi
-    
-    echo "  ⚙️ Configuração otimizada para Windows..."
-    meson setup "$BUILD_DIR" \
-      --prefix="$INSTALL_PREFIX" \
-      --buildtype=release \
-      -Dqt=enabled \
-      -Dlibplacebo=disabled \
-      -Dskins2=disabled \
-      -Davcodec=disabled \
-      -Ddbus=disabled \
-      -Dncurses=disabled \
-      --wrap-mode=nodownload
+        # Garantir que estamos no diretório fonte do VLC antes de configurar o build
+        cd "$VLC_SOURCE_DIR" || exit 1
+
+        if [ -d "$BUILD_DIR" ]; then
+                echo "  🗑️ Removendo build anterior..."
+                rm -rf "$BUILD_DIR"
+        fi
+
+        echo "  ⚙️ Configuração otimizada para Windows..."
+        # Chamar meson a partir do diretório fonte usando '.' como source dir
+        meson setup "$BUILD_DIR" . \
+            --prefix="$INSTALL_PREFIX" \
+            --buildtype=release \
+            -Dqt=enabled \
+            -Dlibplacebo=disabled \
+            -Dskins2=disabled \
+            -Davcodec=disabled \
+            -Ddbus=disabled \
+            -Dncurses=disabled \
+            --wrap-mode=nodownload
     
     print_success "Configuração concluída!"
     
